@@ -1,0 +1,113 @@
+// This is your Prisma schema file,
+// HRIS with Face Recognition System
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Department {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  employees Employee[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Outlet {
+  id            String       @id @default(cuid())
+  name          String       @unique
+  address       String?
+  latitude      Float
+  longitude     Float
+  radius        Int          @default(100) // geofence radius in meters
+  dailyRate     Float        @default(0) // base daily rate for payroll
+  workStartTime String       @default("09:00")
+  workEndTime   String       @default("17:00")
+  isActive      Boolean      @default(true)
+  shifts        Shift[]
+  employees     Employee[]
+  attendance    Attendance[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model Shift {
+  id            String    @id @default(cuid())
+  name          String
+  startTime     String
+  endTime       String
+  outletId      String
+  outlet        Outlet    @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  employees     Employee[]
+}
+
+model Employee {
+  id            String      @id @default(cuid())
+  employeeId    String      @unique
+  name          String
+  email         String      @unique
+  phone         String?
+  position      String
+  departmentId  String?
+  department    Department? @relation(fields: [departmentId], references: [id])
+  outletId      String?
+  outlet        Outlet?     @relation(fields: [outletId], references: [id])
+  shiftId       String?
+  shift         Shift?      @relation(fields: [shiftId], references: [id])
+  faceDescriptor String?    // JSON array of 128 float values for face embedding
+  photoUrl      String?
+  isActive      Boolean     @default(true)
+  attendance    Attendance[]
+  payrollIncentives PayrollIncentive[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model Attendance {
+  id               String   @id @default(cuid())
+  employeeId       String
+  employee         Employee @relation(fields: [employeeId], references: [id])
+  outletId         String?
+  outlet           Outlet?  @relation(fields: [outletId], references: [id])
+  date             String   // YYYY-MM-DD format
+  clockIn          String?  // HH:mm:ss format
+  clockOut         String?  // HH:mm:ss format
+  clockInPhoto     String?  // Base64 encoded photo
+  clockOutPhoto    String?  // Base64 encoded photo
+  clockInLocation  String?
+  clockOutLocation String?
+  status           String   @default("PRESENT") // PRESENT, LATE, ABSENT, EARLY_LEAVE
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([employeeId, date])
+}
+
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PayrollIncentive {
+  id          String   @id @default(cuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date        String   // YYYY-MM format to associate with a payroll month
+  name        String   // e.g., Bonus, Kasbon, Lembur
+  amount      Float
+  type        String   @default("ADDITION") // ADDITION or DEDUCTION
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
