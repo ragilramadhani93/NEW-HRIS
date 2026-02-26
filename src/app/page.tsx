@@ -89,54 +89,54 @@ export default function HRISApp() {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-950 via-slate-900 to-violet-950">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-white">Loading HRIS System...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-400 mx-auto mb-4"></div>
+          <p className="text-indigo-200 font-medium">Loading HRIS System...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-indigo-50/30 to-slate-100 dark:from-slate-950 dark:via-indigo-950/20 dark:to-slate-950">
       <Header />
       <div className="flex-1 flex overflow-hidden">
         <Tabs defaultValue="clock" orientation="vertical" className="flex flex-1 w-full flex-col md:flex-row">
 
           {/* Sidebar Navigation */}
-          <div className="w-full md:w-60 flex-shrink-0 border-b md:border-b-0 md:border-r bg-white dark:bg-slate-900 shadow-sm z-10 flex flex-col">
-            <div className="p-4 hidden md:block border-b">
-              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Main Menu</h2>
+          <div className="w-full md:w-64 flex-shrink-0 border-b md:border-b-0 md:border-r border-indigo-100/50 dark:border-indigo-900/30 glass z-10 flex flex-col">
+            <div className="p-4 hidden md:block border-b border-indigo-100/50 dark:border-indigo-900/30">
+              <h2 className="text-[10px] font-bold text-indigo-400/70 uppercase tracking-[0.15em]">Main Menu</h2>
             </div>
-            <TabsList className="flex md:flex-col h-auto md:h-[calc(100vh-140px)] bg-transparent items-stretch p-2 md:p-3 gap-2 content-start justify-start overflow-x-auto md:overflow-y-auto no-scrollbar outline-none border-none text-slate-600 dark:text-slate-400">
-              <TabsTrigger value="clock" className="flex justify-start items-center gap-3 px-3 py-2.5 h-auto rounded-md hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-50 data-[state=active]:bg-blue-50 dark:data-[state=active]:bg-blue-900/40 data-[state=active]:text-blue-700 dark:data-[state=active]:text-blue-400 font-medium transition-all shadow-none border-none outline-none">
+            <TabsList className="flex md:flex-col h-auto md:h-[calc(100vh-140px)] bg-transparent items-stretch p-2 md:p-3 gap-1 content-start justify-start overflow-x-auto md:overflow-y-auto no-scrollbar outline-none border-none text-slate-500 dark:text-slate-400">
+              <TabsTrigger value="clock" className="flex justify-start items-center gap-3 px-3 py-2.5 h-auto rounded-xl hover:bg-indigo-50/80 hover:text-indigo-700 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-50 data-[state=active]:to-violet-50/50 dark:data-[state=active]:from-indigo-900/40 dark:data-[state=active]:to-violet-900/20 data-[state=active]:text-indigo-700 dark:data-[state=active]:text-indigo-300 data-[state=active]:shadow-sm font-medium transition-all duration-200 shadow-none border-none outline-none">
                 <Fingerprint className="h-5 w-5 flex-shrink-0" />
                 <span className="whitespace-nowrap">Clock In/Out</span>
               </TabsTrigger>
-              <TabsTrigger value="dashboard" className="flex justify-start items-center gap-3 px-3 py-2.5 h-auto rounded-md hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-50 data-[state=active]:bg-blue-50 dark:data-[state=active]:bg-blue-900/40 data-[state=active]:text-blue-700 dark:data-[state=active]:text-blue-400 font-medium transition-all shadow-none border-none outline-none">
+              <TabsTrigger value="dashboard" className="flex justify-start items-center gap-3 px-3 py-2.5 h-auto rounded-xl hover:bg-indigo-50/80 hover:text-indigo-700 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-50 data-[state=active]:to-violet-50/50 dark:data-[state=active]:from-indigo-900/40 dark:data-[state=active]:to-violet-900/20 data-[state=active]:text-indigo-700 dark:data-[state=active]:text-indigo-300 data-[state=active]:shadow-sm font-medium transition-all duration-200 shadow-none border-none outline-none">
                 <BarChart3 className="h-5 w-5 flex-shrink-0" />
                 <span className="whitespace-nowrap">Dashboard</span>
               </TabsTrigger>
-              <TabsTrigger value="employees" className="flex justify-start items-center gap-3 px-3 py-2.5 h-auto rounded-md hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-50 data-[state=active]:bg-blue-50 dark:data-[state=active]:bg-blue-900/40 data-[state=active]:text-blue-700 dark:data-[state=active]:text-blue-400 font-medium transition-all shadow-none border-none outline-none">
+              <TabsTrigger value="employees" className="flex justify-start items-center gap-3 px-3 py-2.5 h-auto rounded-xl hover:bg-indigo-50/80 hover:text-indigo-700 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-50 data-[state=active]:to-violet-50/50 dark:data-[state=active]:from-indigo-900/40 dark:data-[state=active]:to-violet-900/20 data-[state=active]:text-indigo-700 dark:data-[state=active]:text-indigo-300 data-[state=active]:shadow-sm font-medium transition-all duration-200 shadow-none border-none outline-none">
                 <Users className="h-5 w-5 flex-shrink-0" />
                 <span className="whitespace-nowrap">Employees</span>
               </TabsTrigger>
-              <TabsTrigger value="outlets" className="flex justify-start items-center gap-3 px-3 py-2.5 h-auto rounded-md hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-50 data-[state=active]:bg-blue-50 dark:data-[state=active]:bg-blue-900/40 data-[state=active]:text-blue-700 dark:data-[state=active]:text-blue-400 font-medium transition-all shadow-none border-none outline-none">
+              <TabsTrigger value="outlets" className="flex justify-start items-center gap-3 px-3 py-2.5 h-auto rounded-xl hover:bg-indigo-50/80 hover:text-indigo-700 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-50 data-[state=active]:to-violet-50/50 dark:data-[state=active]:from-indigo-900/40 dark:data-[state=active]:to-violet-900/20 data-[state=active]:text-indigo-700 dark:data-[state=active]:text-indigo-300 data-[state=active]:shadow-sm font-medium transition-all duration-200 shadow-none border-none outline-none">
                 <MapPin className="h-5 w-5 flex-shrink-0" />
                 <span className="whitespace-nowrap">Outlets</span>
               </TabsTrigger>
-              <TabsTrigger value="reports" className="flex justify-start items-center gap-3 px-3 py-2.5 h-auto rounded-md hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-50 data-[state=active]:bg-blue-50 dark:data-[state=active]:bg-blue-900/40 data-[state=active]:text-blue-700 dark:data-[state=active]:text-blue-400 font-medium transition-all shadow-none border-none outline-none">
+              <TabsTrigger value="reports" className="flex justify-start items-center gap-3 px-3 py-2.5 h-auto rounded-xl hover:bg-indigo-50/80 hover:text-indigo-700 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-50 data-[state=active]:to-violet-50/50 dark:data-[state=active]:from-indigo-900/40 dark:data-[state=active]:to-violet-900/20 data-[state=active]:text-indigo-700 dark:data-[state=active]:text-indigo-300 data-[state=active]:shadow-sm font-medium transition-all duration-200 shadow-none border-none outline-none">
                 <Calendar className="h-5 w-5 flex-shrink-0" />
                 <span className="whitespace-nowrap">Reports</span>
               </TabsTrigger>
-              <TabsTrigger value="payroll" className="flex justify-start items-center gap-3 px-3 py-2.5 h-auto rounded-md hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-50 data-[state=active]:bg-blue-50 dark:data-[state=active]:bg-blue-900/40 data-[state=active]:text-blue-700 dark:data-[state=active]:text-blue-400 font-medium transition-all shadow-none border-none outline-none">
+              <TabsTrigger value="payroll" className="flex justify-start items-center gap-3 px-3 py-2.5 h-auto rounded-xl hover:bg-indigo-50/80 hover:text-indigo-700 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-50 data-[state=active]:to-violet-50/50 dark:data-[state=active]:from-indigo-900/40 dark:data-[state=active]:to-violet-900/20 data-[state=active]:text-indigo-700 dark:data-[state=active]:text-indigo-300 data-[state=active]:shadow-sm font-medium transition-all duration-200 shadow-none border-none outline-none">
                 <Banknote className="h-5 w-5 flex-shrink-0" />
                 <span className="whitespace-nowrap">Payroll</span>
               </TabsTrigger>
 
-              <div className="md:mt-auto pt-2 mt-0 border-l md:border-l-0 md:border-t ml-2 pl-2 md:ml-0 md:pl-0 border-slate-200 dark:border-slate-800/50">
-                <TabsTrigger value="settings" className="w-full flex justify-start items-center gap-3 px-3 py-2.5 h-auto rounded-md hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-50 data-[state=active]:bg-blue-50 dark:data-[state=active]:bg-blue-900/40 data-[state=active]:text-blue-700 dark:data-[state=active]:text-blue-400 font-medium transition-all shadow-none border-none outline-none">
+              <div className="md:mt-auto pt-2 mt-0 border-l md:border-l-0 md:border-t ml-2 pl-2 md:ml-0 md:pl-0 border-indigo-100/50 dark:border-indigo-900/30">
+                <TabsTrigger value="settings" className="w-full flex justify-start items-center gap-3 px-3 py-2.5 h-auto rounded-xl hover:bg-indigo-50/80 hover:text-indigo-700 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-50 data-[state=active]:to-violet-50/50 dark:data-[state=active]:from-indigo-900/40 dark:data-[state=active]:to-violet-900/20 data-[state=active]:text-indigo-700 dark:data-[state=active]:text-indigo-300 data-[state=active]:shadow-sm font-medium transition-all duration-200 shadow-none border-none outline-none">
                   <Settings className="h-4 w-4 flex-shrink-0" />
                   <span className="whitespace-nowrap text-sm">Settings</span>
                 </TabsTrigger>
@@ -188,23 +188,23 @@ function Header() {
   }, [])
 
   return (
-    <header className="bg-white dark:bg-slate-800 shadow-sm border-b">
-      <div className="container mx-auto px-4 py-4">
+    <header className="glass border-b border-indigo-100/50 dark:border-indigo-900/30 sticky top-0 z-20">
+      <div className="container mx-auto px-4 py-3">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-2 rounded-lg">
+            <div className="bg-gradient-to-br from-indigo-500 to-violet-600 p-2.5 rounded-xl shadow-lg shadow-indigo-500/20 animate-pulse-glow">
               <Building2 className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900 dark:text-white">{settings.companyName}</h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400">HRIS Face Recognition System</p>
+              <h1 className="text-xl font-bold gradient-text">{settings.companyName}</h1>
+              <p className="text-xs font-medium text-indigo-400/70 dark:text-indigo-400/60 tracking-wide">HRIS Face Recognition System</p>
             </div>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-mono font-bold text-slate-900 dark:text-white">
+            <div className="text-2xl font-mono font-bold text-slate-800 dark:text-white tabular-nums tracking-tight">
               {currentTime.toLocaleTimeString()}
             </div>
-            <div className="text-sm text-slate-500 dark:text-slate-400">
+            <div className="text-xs font-medium text-slate-400 dark:text-slate-500">
               {currentTime.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </div>
           </div>
@@ -496,13 +496,15 @@ function ClockTab({ faceApiLoaded }: { faceApiLoaded: boolean }) {
   return (
     <div className="grid lg:grid-cols-2 gap-6">
       {/* Camera Section */}
-      <Card className="overflow-hidden">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Camera className="h-5 w-5" />
+      <Card className="overflow-hidden border-indigo-100/50 dark:border-indigo-900/30 shadow-lg shadow-indigo-500/5 animate-fade-in-up">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <div className="p-1.5 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600">
+              <Camera className="h-4 w-4 text-white" />
+            </div>
             Face Recognition
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-xs">
             {faceApiLoaded ? 'Face recognition ready' : 'Loading face recognition models...'}
           </CardDescription>
         </CardHeader>
@@ -523,10 +525,10 @@ function ClockTab({ faceApiLoaded }: { faceApiLoaded: boolean }) {
             />
 
             {!isCameraActive && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/90">
-                <VideoOff className="h-16 w-16 text-slate-400 mb-4" />
-                <p className="text-slate-400 mb-4">Camera is off</p>
-                <Button onClick={startCamera} disabled={!faceApiLoaded}>
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-indigo-950/90 to-slate-900">
+                <VideoOff className="h-14 w-14 text-indigo-300/50 mb-4" />
+                <p className="text-indigo-300/60 mb-4 text-sm font-medium">Camera is off</p>
+                <Button onClick={startCamera} disabled={!faceApiLoaded} className="bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 shadow-lg shadow-indigo-500/25 border-0">
                   <Video className="h-4 w-4 mr-2" />
                   Start Camera
                 </Button>
@@ -609,8 +611,8 @@ function ClockTab({ faceApiLoaded }: { faceApiLoaded: boolean }) {
       </Card>
 
       {/* Status Section */}
-      <div className="space-y-6">
-        <Card>
+      <div className="space-y-5">
+        <Card className="border-indigo-100/50 dark:border-indigo-900/30 shadow-md animate-fade-in-up delay-1">
           <CardHeader>
             <CardTitle>Today&apos;s Status</CardTitle>
             <CardDescription>
@@ -618,14 +620,14 @@ function ClockTab({ faceApiLoaded }: { faceApiLoaded: boolean }) {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800">
-                <p className="text-sm text-slate-500">Clock In</p>
-                <p className="text-2xl font-bold">{todayStatus?.clockIn || '--:--:--'}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-4 rounded-xl bg-gradient-to-br from-indigo-50 to-violet-50/50 dark:from-indigo-900/30 dark:to-violet-900/20 border border-indigo-100/50 dark:border-indigo-800/30">
+                <p className="text-xs font-medium text-indigo-400 dark:text-indigo-400/70 uppercase tracking-wider mb-1">Clock In</p>
+                <p className="text-2xl font-bold text-slate-800 dark:text-white tabular-nums">{todayStatus?.clockIn || '--:--:--'}</p>
               </div>
-              <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800">
-                <p className="text-sm text-slate-500">Clock Out</p>
-                <p className="text-2xl font-bold">{todayStatus?.clockOut || '--:--:--'}</p>
+              <div className="p-4 rounded-xl bg-gradient-to-br from-violet-50 to-purple-50/50 dark:from-violet-900/20 dark:to-purple-900/20 border border-violet-100/50 dark:border-violet-800/30">
+                <p className="text-xs font-medium text-violet-400 dark:text-violet-400/70 uppercase tracking-wider mb-1">Clock Out</p>
+                <p className="text-2xl font-bold text-slate-800 dark:text-white tabular-nums">{todayStatus?.clockOut || '--:--:--'}</p>
               </div>
             </div>
 
@@ -645,41 +647,41 @@ function ClockTab({ faceApiLoaded }: { faceApiLoaded: boolean }) {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Work Schedule</CardTitle>
+        <Card className="border-indigo-100/50 dark:border-indigo-900/30 shadow-md animate-fade-in-up delay-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Work Schedule</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               <div className="flex justify-between items-center">
-                <span className="text-slate-500">Start Time</span>
-                <span className="font-semibold">{settings.workStartTime}</span>
+                <span className="text-sm text-slate-500">Start Time</span>
+                <span className="font-semibold text-sm tabular-nums">{settings.workStartTime}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-slate-500">End Time</span>
-                <span className="font-semibold">{settings.workEndTime}</span>
+                <span className="text-sm text-slate-500">End Time</span>
+                <span className="font-semibold text-sm tabular-nums">{settings.workEndTime}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-slate-500">Late Threshold</span>
-                <span className="font-semibold">{settings.lateThreshold} minutes</span>
+                <span className="text-sm text-slate-500">Late Threshold</span>
+                <span className="font-semibold text-sm">{settings.lateThreshold} minutes</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Stats</CardTitle>
+        <Card className="border-indigo-100/50 dark:border-indigo-900/30 shadow-md animate-fade-in-up delay-3">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Quick Stats</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-4 rounded-lg bg-green-50 dark:bg-green-900/20">
-                <p className="text-3xl font-bold text-green-600">{employees.filter(e => e.isActive).length}</p>
-                <p className="text-sm text-green-600">Active Employees</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/10 border border-emerald-100/50 dark:border-emerald-800/30">
+                <p className="text-3xl font-bold text-emerald-600">{employees.filter(e => e.isActive).length}</p>
+                <p className="text-xs font-medium text-emerald-500/70 mt-1">Active Employees</p>
               </div>
-              <div className="text-center p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20">
-                <p className="text-3xl font-bold text-blue-600">{employees.filter(e => e.faceDescriptor).length}</p>
-                <p className="text-sm text-blue-600">Face Registered</p>
+              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-indigo-50 to-violet-50/50 dark:from-indigo-900/20 dark:to-violet-900/10 border border-indigo-100/50 dark:border-indigo-800/30">
+                <p className="text-3xl font-bold text-indigo-600">{employees.filter(e => e.faceDescriptor).length}</p>
+                <p className="text-xs font-medium text-indigo-500/70 mt-1">Face Registered</p>
               </div>
             </div>
           </CardContent>
@@ -730,50 +732,58 @@ function DashboardTab() {
     <div className="space-y-6">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+        <Card className="stat-gradient-blue text-white card-hover shadow-lg shadow-indigo-500/20 border-0 animate-fade-in-up">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-blue-100">Total Employees</p>
-                <p className="text-3xl font-bold">{dashboardStats?.totalEmployees || 0}</p>
+                <p className="text-indigo-100 text-sm font-medium">Total Employees</p>
+                <p className="text-3xl font-bold mt-1">{dashboardStats?.totalEmployees || 0}</p>
               </div>
-              <Users className="h-10 w-10 text-blue-200" />
+              <div className="p-3 rounded-xl bg-white/15 backdrop-blur-sm">
+                <Users className="h-7 w-7 text-white" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white">
+        <Card className="stat-gradient-green text-white card-hover shadow-lg shadow-emerald-500/20 border-0 animate-fade-in-up delay-1">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-green-100">Present Today</p>
-                <p className="text-3xl font-bold">{dashboardStats?.presentToday || 0}</p>
+                <p className="text-emerald-100 text-sm font-medium">Present Today</p>
+                <p className="text-3xl font-bold mt-1">{dashboardStats?.presentToday || 0}</p>
               </div>
-              <UserCheck className="h-10 w-10 text-green-200" />
+              <div className="p-3 rounded-xl bg-white/15 backdrop-blur-sm">
+                <UserCheck className="h-7 w-7 text-white" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white">
+        <Card className="stat-gradient-amber text-white card-hover shadow-lg shadow-amber-500/20 border-0 animate-fade-in-up delay-2">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-orange-100">Late Today</p>
-                <p className="text-3xl font-bold">{dashboardStats?.lateToday || 0}</p>
+                <p className="text-amber-100 text-sm font-medium">Late Today</p>
+                <p className="text-3xl font-bold mt-1">{dashboardStats?.lateToday || 0}</p>
               </div>
-              <AlertCircle className="h-10 w-10 text-orange-200" />
+              <div className="p-3 rounded-xl bg-white/15 backdrop-blur-sm">
+                <AlertCircle className="h-7 w-7 text-white" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-red-500 to-red-600 text-white">
+        <Card className="stat-gradient-rose text-white card-hover shadow-lg shadow-rose-500/20 border-0 animate-fade-in-up delay-3">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-red-100">Absent Today</p>
-                <p className="text-3xl font-bold">{dashboardStats?.absentToday || 0}</p>
+                <p className="text-rose-100 text-sm font-medium">Absent Today</p>
+                <p className="text-3xl font-bold mt-1">{dashboardStats?.absentToday || 0}</p>
               </div>
-              <UserX className="h-10 w-10 text-red-200" />
+              <div className="p-3 rounded-xl bg-white/15 backdrop-blur-sm">
+                <UserX className="h-7 w-7 text-white" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -781,10 +791,10 @@ function DashboardTab() {
 
       {/* Charts Row */}
       <div className="grid lg:grid-cols-2 gap-6">
-        <Card>
+        <Card className="border-indigo-100/50 dark:border-indigo-900/30 shadow-md animate-fade-in-up delay-4">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
+              <TrendingUp className="h-5 w-5 text-indigo-500" />
               Weekly Attendance
             </CardTitle>
           </CardHeader>
@@ -976,7 +986,7 @@ function EmployeesTab({ faceApiLoaded }: { faceApiLoaded: boolean }) {
           faceApiLoaded={faceApiLoaded}
           editingEmployee={editingEmployee}
         />
-        <Button onClick={() => setIsDialogOpen(true)}>
+        <Button onClick={() => setIsDialogOpen(true)} className="bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 shadow-md shadow-indigo-500/20 border-0">
           <Plus className="h-4 w-4 mr-2" />
           Add Employee
         </Button>
