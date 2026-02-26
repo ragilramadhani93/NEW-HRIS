@@ -10,6 +10,13 @@ const globalForPrisma = globalThis as unknown as {
 const tursoUrl = process.env.TURSO_DATABASE_URL
 const tursoAuthToken = process.env.TURSO_AUTH_TOKEN
 
+// When using Turso adapter, Prisma still validates DATABASE_URL against the
+// sqlite provider (requires file: protocol). Set a dummy value so validation
+// passes — the actual connection goes through the LibSQL adapter.
+if (tursoUrl && tursoAuthToken && (!process.env.DATABASE_URL || !process.env.DATABASE_URL.startsWith('file:'))) {
+  process.env.DATABASE_URL = 'file:./dev.db'
+}
+
 let prisma: PrismaClient
 
 if (tursoUrl && tursoAuthToken) {
