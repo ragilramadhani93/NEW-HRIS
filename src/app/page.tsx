@@ -1260,7 +1260,7 @@ function EmployeeFormDialog({
           console.log("Response NOT OK")
           const error = await response.json()
           console.error("Server error:", error)
-          toast.error(error.error || 'Failed to create employee')
+          toast.error(error.details || error.error || 'Failed to create employee')
         }
       }
     } catch (error) {

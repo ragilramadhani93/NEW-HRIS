@@ -52,7 +52,6 @@ export async function POST(request: NextRequest) {
       body = await request.json();
       console.log("Request body parsed successfully");
       console.log("Body keys:", Object.keys(body));
-      if (body.faceDescriptor) console.log("FaceDescriptor length:", Array.isArray(body.faceDescriptor) ? body.faceDescriptor.length : 'not an array');
     } catch (parseError) {
       console.error("Error parsing request body:", parseError);
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
@@ -93,23 +92,37 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Validate outletId if provided
+    let validOutletId: string | null = null
+    if (outletId && outletId.trim() !== '') {
+      validOutletId = outletId
+    }
 
+    // Validate shiftId if provided
+    let validShiftId: string | null = null
+    if (shiftId && shiftId.trim() !== '') {
+      validShiftId = shiftId
+    }
 
-    console.log("Creating employee in DB...");
+    const createData = {
+      employeeId,
+      name,
+      email,
+      phone: phone || null,
+      position,
+      departmentId: validDepartmentId,
+      outletId: validOutletId,
+      shiftId: validShiftId,
+      faceDescriptor: faceDescriptor || null,
+    }
+
+    console.log("Creating employee in DB with data:", JSON.stringify({
+      ...createData,
+      faceDescriptor: createData.faceDescriptor ? '[present]' : null
+    }));
     const startTime = Date.now();
     const employee = await db.employee.create({
-      data: {
-        employeeId,
-        name,
-        email,
-        phone: phone || null,
-        position,
-        departmentId: departmentId || null,
-        outletId: outletId || null,
-        shiftId: shiftId || null,
-        faceDescriptor,
-        // photoUrl: null // No longer storing photoUrl in DB
-      },
+      data: createData,
       include: {
         department: true,
       },
@@ -127,6 +140,13 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
   } catch (error) {
     console.error('Error creating employee:', error)
-    return NextResponse.json({ error: 'Failed to create employee', details: String(error) }, { status: 500 })
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    const errorStack = error instanceof Error ? error.stack : undefined
+    return NextResponse.json({
+      error: 'Failed to create employee',
+      details: errorMessage,
+      stack: errorStack,
+      type: error?.constructor?.name
+    }, { status: 500 })
   }
 }

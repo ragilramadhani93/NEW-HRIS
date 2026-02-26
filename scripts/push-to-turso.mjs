@@ -20,15 +20,17 @@ const client = createClient({
 
 async function run() {
     try {
-        // Step 1: Drop all existing tables using executeMultiple
+        // Step 1: Drop ALL existing tables (including new ones)
         console.log('Dropping existing tables...');
         const dropSQL = `
+            DROP TABLE IF EXISTS "PayrollIncentive";
             DROP TABLE IF EXISTS "Attendance";
             DROP TABLE IF EXISTS "Employee";
+            DROP TABLE IF EXISTS "Shift";
+            DROP TABLE IF EXISTS "Outlet";
             DROP TABLE IF EXISTS "Department";
             DROP TABLE IF EXISTS "Setting";
             DROP TABLE IF EXISTS "Admin";
-            DROP TABLE IF EXISTS "Outlet";
             DROP TABLE IF EXISTS "_prisma_migrations";
         `;
         await client.executeMultiple(dropSQL);
