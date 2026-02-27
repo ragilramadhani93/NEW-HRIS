@@ -127,10 +127,12 @@ export default function HRISApp() {
                   <MapPin className="h-5 w-5 flex-shrink-0" />
                   <span className="whitespace-nowrap">Outlets</span>
                 </TabsTrigger>
+              </TabsList>
 
-                <div className="px-4 py-3 mt-4">
-                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Operations</p>
-                </div>
+              <div className="px-4 py-3 mt-4">
+                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Operations</p>
+              </div>
+              <TabsList className="flex flex-col bg-transparent items-stretch gap-0.5 outline-none border-none">
                 <TabsTrigger value="reports" className="flex justify-start items-center gap-3 px-4 py-2.5 h-auto rounded-lg text-slate-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700/50 data-[state=active]:bg-indigo-600/10 data-[state=active]:text-indigo-600 dark:data-[state=active]:bg-indigo-500/10 dark:data-[state=active]:text-indigo-400 font-semibold transition-colors shadow-none border-none outline-none">
                   <Calendar className="h-5 w-5 flex-shrink-0" />
                   <span className="whitespace-nowrap">Reports</span>
