@@ -182,17 +182,48 @@ export default function MobileClockPage() {
                 if (detection) {
                     setScanStatus('Wajah terdeteksi, mencocokkan...')
                     const currentDescriptor = Array.from(detection.descriptor) as number[]
+                    console.log('Current face descriptor length:', currentDescriptor.length)
 
                     // Match against all employees with face descriptors
                     let bestMatch: { employee: Employee; score: number } | null = null
                     const empsWithFace = employees.filter(e => e.faceDescriptor)
-                    console.log(`Matching against ${empsWithFace.length} employees with face data`)
+                    console.log(`Employees total: ${employees.length}, with face: ${empsWithFace.length}`)
 
                     for (const emp of empsWithFace) {
                         try {
-                            const storedDescriptor = JSON.parse(emp.faceDescriptor!) as number[]
+                            const raw = emp.faceDescriptor!
+                            console.log(`${emp.name} raw descriptor type:`, typeof raw, 'first 50 chars:', raw.substring(0, 50))
+
+                            // Parse the stored descriptor - handle multiple formats
+                            let parsed = JSON.parse(raw)
+
+                            // If it's a string (double-stringified), parse again
+                            if (typeof parsed === 'string') {
+                                console.log(`${emp.name}: double-stringified, parsing again`)
+                                parsed = JSON.parse(parsed)
+                            }
+
+                            // If it's a nested array [[...]], unwrap
+                            if (Array.isArray(parsed) && parsed.length === 1 && Array.isArray(parsed[0])) {
+                                console.log(`${emp.name}: nested array, unwrapping`)
+                                parsed = parsed[0]
+                            }
+
+                            // If it's an object with numeric keys (like Float32Array serialized), convert
+                            if (!Array.isArray(parsed) && typeof parsed === 'object') {
+                                console.log(`${emp.name}: object format, converting to array`)
+                                parsed = Object.values(parsed)
+                            }
+
+                            const storedDescriptor = parsed as number[]
+                            console.log(`${emp.name} stored descriptor length:`, storedDescriptor.length)
+
+                            if (storedDescriptor.length !== currentDescriptor.length) {
+                                console.warn(`${emp.name}: descriptor length mismatch! stored=${storedDescriptor.length} current=${currentDescriptor.length}`)
+                                continue
+                            }
+
                             const distance = euclideanDistance(currentDescriptor, storedDescriptor)
-                            // Convert distance to percentage (0 distance = 100%, 0.6 distance = 0%)
                             const score = Math.round(Math.max(0, (1 - distance / 0.6)) * 100)
                             console.log(`${emp.name}: distance=${distance.toFixed(4)}, score=${score}%`)
 
@@ -201,6 +232,7 @@ export default function MobileClockPage() {
                             }
                         } catch (parseErr) {
                             console.error(`Error parsing face data for ${emp.name}:`, parseErr)
+                            console.error(`Raw data:`, emp.faceDescriptor?.substring(0, 100))
                         }
                     }
 
@@ -221,15 +253,16 @@ export default function MobileClockPage() {
                         stopCamera()
                         toast.success(`Dikenali: ${bestMatch.employee.name} (${bestMatch.score}%)`)
                     } else {
-                        setScanStatus('Wajah tidak dikenali, coba lagi...')
+                        const faceCount = empsWithFace.length
+                        setScanStatus(faceCount === 0 ? 'Tidak ada wajah terdaftar!' : 'Wajah tidak dikenali, coba lagi...')
                     }
                 } else {
                     setScanStatus('Arahkan wajah ke kamera...')
                 }
-            } catch {
-                // silent - will retry
+            } catch (scanErr) {
+                console.error('Face scan error:', scanErr)
             }
-        }, 1500) // Scan every 1.5 seconds
+        }, 1500)
     }
 
     // Reset / scan again
