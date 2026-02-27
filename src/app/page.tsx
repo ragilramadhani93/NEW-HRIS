@@ -108,7 +108,7 @@ export default function HRISApp() {
     <div className="min-h-screen flex flex-col bg-[#F8FAFC] dark:bg-[#0f172a] transition-colors duration-200">
       <Header />
       <div className="flex flex-1 overflow-hidden">
-        <Tabs defaultValue="clock" orientation="vertical" className="flex flex-1 w-full flex-col md:flex-row">
+        <Tabs defaultValue="dashboard" orientation="vertical" className="flex flex-1 w-full flex-col md:flex-row">
 
           {/* Sidebar Navigation */}
           <aside className="w-full md:w-64 flex-shrink-0 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 z-10 flex-col hidden md:flex">
