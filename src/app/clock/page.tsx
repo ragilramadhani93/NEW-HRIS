@@ -120,7 +120,9 @@ export default function MobileClockPage() {
     // Start camera after models loaded
     useEffect(() => {
         if (modelsLoaded && !matchedEmployee) {
-            startCamera()
+            // Small delay to ensure video element is mounted
+            const timer = setTimeout(() => startCamera(), 500)
+            return () => clearTimeout(timer)
         }
         return () => stopScanning()
     }, [modelsLoaded, matchedEmployee])
@@ -139,20 +141,33 @@ export default function MobileClockPage() {
 
     const startCamera = async () => {
         try {
+            console.log('Starting camera...')
+            setScanStatus('Meminta akses kamera...')
             const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
+                video: { facingMode: 'user' }
             })
+            console.log('Camera stream obtained')
             if (videoRef.current) {
                 videoRef.current.srcObject = stream
-                videoRef.current.onloadedmetadata = () => {
-                    videoRef.current?.play()
+                videoRef.current.setAttribute('playsinline', 'true')
+                videoRef.current.muted = true
+                try {
+                    await videoRef.current.play()
+                    console.log('Video playing')
                     setIsScanning(true)
                     setScanStatus('Arahkan wajah ke kamera...')
                     startScanning()
+                } catch (playErr) {
+                    console.error('Video play failed:', playErr)
+                    setScanStatus('Kamera gagal diputar, tap layar untuk retry')
                 }
+            } else {
+                console.error('Video ref not available')
+                setScanStatus('Element video tidak tersedia')
             }
-        } catch {
-            setScanStatus('Tidak bisa akses kamera')
+        } catch (err) {
+            console.error('Camera error:', err)
+            setScanStatus('Tidak bisa akses kamera: ' + (err instanceof Error ? err.message : String(err)))
         }
     }
 
