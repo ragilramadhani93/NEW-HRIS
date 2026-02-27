@@ -25,7 +25,7 @@ interface TodayAttendance {
     status: string
 }
 
-const MIN_MATCH_SCORE = 80
+const MIN_MATCH_SCORE = 60
 
 // Manual Euclidean distance (face-api.js doesn't expose this as standalone)
 function euclideanDistance(a: number[], b: number[]): number {
