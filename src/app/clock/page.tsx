@@ -3,11 +3,18 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { toast, Toaster } from 'sonner'
 
+declare global {
+    interface Window {
+        faceapi: any
+    }
+}
+
 interface Employee {
     id: string
     employeeId: string
     name: string
     position: string
+    faceDescriptor: string | null
     outlet?: { name: string } | null
 }
 
@@ -18,20 +25,26 @@ interface TodayAttendance {
     status: string
 }
 
+const MIN_MATCH_SCORE = 80
+
 export default function MobileClockPage() {
     const [employees, setEmployees] = useState<Employee[]>([])
-    const [selectedEmployee, setSelectedEmployee] = useState<string>('')
+    const [matchedEmployee, setMatchedEmployee] = useState<Employee | null>(null)
+    const [matchScore, setMatchScore] = useState<number>(0)
     const [todayStatus, setTodayStatus] = useState<TodayAttendance | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [isClocking, setIsClocking] = useState(false)
     const [currentTime, setCurrentTime] = useState(new Date())
     const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null)
     const [locationError, setLocationError] = useState('')
-    const [searchTerm, setSearchTerm] = useState('')
 
-    // Camera
+    // Face recognition
+    const [modelsLoaded, setModelsLoaded] = useState(false)
+    const [isScanning, setIsScanning] = useState(false)
+    const [scanStatus, setScanStatus] = useState('Memuat model face recognition...')
     const videoRef = useRef<HTMLVideoElement>(null)
-    const [isCameraActive, setIsCameraActive] = useState(false)
+    const canvasRef = useRef<HTMLCanvasElement>(null)
+    const scanIntervalRef = useRef<NodeJS.Timeout | null>(null)
     const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null)
 
     // Clock
@@ -64,58 +77,163 @@ export default function MobileClockPage() {
         }
     }, [])
 
-    // Fetch today's attendance when employee selected
+    // Load face-api.js
     useEffect(() => {
-        if (!selectedEmployee) {
+        const loadFaceApi = async () => {
+            try {
+                const script = document.createElement('script')
+                script.src = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js'
+                script.async = true
+                script.onload = async () => {
+                    setScanStatus('Memuat model AI...')
+                    const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model'
+                    await Promise.all([
+                        window.faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+                        window.faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                        window.faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+                    ])
+                    setModelsLoaded(true)
+                    setScanStatus('Model siap! Mengarahkan kamera...')
+                }
+                document.head.appendChild(script)
+            } catch {
+                setScanStatus('Gagal memuat model face recognition')
+            }
+        }
+        loadFaceApi()
+    }, [])
+
+    // Start camera after models loaded
+    useEffect(() => {
+        if (modelsLoaded && !matchedEmployee) {
+            startCamera()
+        }
+        return () => stopScanning()
+    }, [modelsLoaded, matchedEmployee])
+
+    // Fetch today status when employee matched
+    useEffect(() => {
+        if (!matchedEmployee) {
             setTodayStatus(null)
             return
         }
-        fetch(`/api/attendance/today?employeeId=${selectedEmployee}`)
+        fetch(`/api/attendance/today?employeeId=${matchedEmployee.id}`)
             .then(res => res.json())
             .then(data => setTodayStatus(data))
             .catch(() => setTodayStatus(null))
-    }, [selectedEmployee])
+    }, [matchedEmployee])
 
-    // Camera functions
-    const startCamera = useCallback(async () => {
+    const startCamera = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'user', width: 480, height: 480 }
+                video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
             })
             if (videoRef.current) {
                 videoRef.current.srcObject = stream
-                setIsCameraActive(true)
+                videoRef.current.onloadedmetadata = () => {
+                    videoRef.current?.play()
+                    setIsScanning(true)
+                    setScanStatus('Arahkan wajah ke kamera...')
+                    startScanning()
+                }
             }
         } catch {
-            toast.error('Tidak bisa akses kamera')
+            setScanStatus('Tidak bisa akses kamera')
         }
-    }, [])
+    }
 
-    const stopCamera = useCallback(() => {
+    const stopCamera = () => {
         if (videoRef.current?.srcObject) {
             const stream = videoRef.current.srcObject as MediaStream
             stream.getTracks().forEach(t => t.stop())
             videoRef.current.srcObject = null
-            setIsCameraActive(false)
         }
-    }, [])
+        setIsScanning(false)
+        stopScanning()
+    }
 
-    const capturePhoto = useCallback(() => {
-        if (!videoRef.current) return
-        const canvas = document.createElement('canvas')
-        canvas.width = 480
-        canvas.height = 480
-        const ctx = canvas.getContext('2d')
-        if (ctx) {
-            ctx.drawImage(videoRef.current, 0, 0, 480, 480)
-            setCapturedPhoto(canvas.toDataURL('image/jpeg', 0.7))
-            stopCamera()
+    const stopScanning = () => {
+        if (scanIntervalRef.current) {
+            clearInterval(scanIntervalRef.current)
+            scanIntervalRef.current = null
         }
-    }, [stopCamera])
+    }
+
+    const startScanning = () => {
+        stopScanning()
+        scanIntervalRef.current = setInterval(async () => {
+            if (!videoRef.current || !window.faceapi || matchedEmployee) return
+
+            try {
+                const detection = await window.faceapi
+                    .detectSingleFace(videoRef.current, new window.faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 }))
+                    .withFaceLandmarks()
+                    .withFaceDescriptor()
+
+                if (detection) {
+                    setScanStatus('Wajah terdeteksi, mencocokkan...')
+                    const currentDescriptor = Array.from(detection.descriptor) as number[]
+
+                    // Match against all employees with face descriptors
+                    let bestMatch: { employee: Employee; score: number } | null = null
+
+                    for (const emp of employees) {
+                        if (!emp.faceDescriptor) continue
+                        try {
+                            const storedDescriptor = JSON.parse(emp.faceDescriptor) as number[]
+                            const distance = window.faceapi.euclideanDistance(currentDescriptor, storedDescriptor)
+                            // Convert distance to percentage (0 distance = 100%, 0.6 distance = 0%)
+                            const score = Math.round(Math.max(0, (1 - distance / 0.6)) * 100)
+
+                            if (score >= MIN_MATCH_SCORE && (!bestMatch || score > bestMatch.score)) {
+                                bestMatch = { employee: emp, score }
+                            }
+                        } catch {
+                            // skip invalid descriptors
+                        }
+                    }
+
+                    if (bestMatch) {
+                        // Capture photo
+                        const canvas = document.createElement('canvas')
+                        canvas.width = videoRef.current.videoWidth
+                        canvas.height = videoRef.current.videoHeight
+                        const ctx = canvas.getContext('2d')
+                        if (ctx) {
+                            ctx.drawImage(videoRef.current, 0, 0)
+                            setCapturedPhoto(canvas.toDataURL('image/jpeg', 0.7))
+                        }
+
+                        setMatchedEmployee(bestMatch.employee)
+                        setMatchScore(bestMatch.score)
+                        setScanStatus(`Dikenali: ${bestMatch.employee.name}`)
+                        stopCamera()
+                        toast.success(`Dikenali: ${bestMatch.employee.name} (${bestMatch.score}%)`)
+                    } else {
+                        setScanStatus('Wajah tidak dikenali, coba lagi...')
+                    }
+                } else {
+                    setScanStatus('Arahkan wajah ke kamera...')
+                }
+            } catch {
+                // silent - will retry
+            }
+        }, 1500) // Scan every 1.5 seconds
+    }
+
+    // Reset / scan again
+    const resetScan = () => {
+        setMatchedEmployee(null)
+        setMatchScore(0)
+        setTodayStatus(null)
+        setCapturedPhoto(null)
+        setScanStatus('Mengarahkan kamera...')
+        setTimeout(() => startCamera(), 300)
+    }
 
     // Clock In/Out
     const handleClockIn = async () => {
-        if (!selectedEmployee) { toast.error('Pilih karyawan terlebih dahulu'); return }
+        if (!matchedEmployee) return
         if (!location) { toast.error('GPS belum tersedia'); return }
 
         setIsClocking(true)
@@ -124,7 +242,7 @@ export default function MobileClockPage() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    employeeId: selectedEmployee,
+                    employeeId: matchedEmployee.id,
                     location,
                     photo: capturedPhoto,
                     settings: { workStartTime: '09:00', lateThreshold: 15 }
@@ -134,7 +252,6 @@ export default function MobileClockPage() {
             if (res.ok) {
                 toast.success('Clock In berhasil!')
                 setTodayStatus(data)
-                setCapturedPhoto(null)
             } else {
                 toast.error(data.error || 'Gagal clock in')
             }
@@ -146,7 +263,8 @@ export default function MobileClockPage() {
     }
 
     const handleClockOut = async () => {
-        if (!selectedEmployee) return
+        if (!matchedEmployee) return
+        if (!location) { toast.error('GPS belum tersedia'); return }
 
         setIsClocking(true)
         try {
@@ -154,7 +272,7 @@ export default function MobileClockPage() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    employeeId: selectedEmployee,
+                    employeeId: matchedEmployee.id,
                     location,
                     photo: capturedPhoto,
                     settings: { workEndTime: '17:00' }
@@ -164,7 +282,6 @@ export default function MobileClockPage() {
             if (res.ok) {
                 toast.success('Clock Out berhasil!')
                 setTodayStatus(data)
-                setCapturedPhoto(null)
             } else {
                 toast.error(data.error || 'Gagal clock out')
             }
@@ -174,13 +291,6 @@ export default function MobileClockPage() {
             setIsClocking(false)
         }
     }
-
-    const filteredEmployees = employees.filter(e =>
-        e.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        e.employeeId.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-
-    const selectedEmpData = employees.find(e => e.id === selectedEmployee)
 
     if (isLoading) {
         return (
@@ -198,7 +308,7 @@ export default function MobileClockPage() {
             <Toaster richColors position="top-center" />
 
             {/* Header */}
-            <header className="bg-[#1e293b] border-b border-slate-700 px-4 py-3 safe-area-top">
+            <header className="bg-[#1e293b] border-b border-slate-700 px-4 py-3">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <div className="bg-indigo-600 p-1.5 rounded-lg">
@@ -219,64 +329,102 @@ export default function MobileClockPage() {
                 </div>
             </header>
 
-            {/* Content */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
 
-                {/* Employee Selection */}
-                {!selectedEmployee ? (
-                    <div className="space-y-3">
-                        <h2 className="text-lg font-bold">Pilih Karyawan</h2>
-                        <input
-                            type="text"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Cari nama atau ID..."
-                            className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
-                        />
-                        <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-                            {filteredEmployees.map(emp => (
-                                <button
-                                    key={emp.id}
-                                    onClick={() => { setSelectedEmployee(emp.id); setSearchTerm('') }}
-                                    className="w-full flex items-center gap-3 p-3 bg-slate-800 border border-slate-700 rounded-xl hover:border-indigo-500 active:bg-slate-700 transition-colors text-left"
-                                >
-                                    <div className="h-10 w-10 rounded-full bg-indigo-600/20 flex items-center justify-center text-indigo-400 font-bold text-sm flex-shrink-0">
-                                        {emp.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-semibold text-sm truncate">{emp.name}</p>
-                                        <p className="text-xs text-slate-400">{emp.position} • {emp.employeeId}</p>
-                                    </div>
-                                    <svg className="h-4 w-4 text-slate-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                                    </svg>
-                                </button>
-                            ))}
-                            {filteredEmployees.length === 0 && (
-                                <p className="text-center text-slate-500 py-8 text-sm">Tidak ada karyawan ditemukan</p>
-                            )}
-                        </div>
-                    </div>
-                ) : (
+                {!matchedEmployee ? (
+                    /* ===== SCANNING MODE ===== */
                     <>
-                        {/* Selected Employee Card */}
-                        <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="h-12 w-12 rounded-full bg-indigo-600/20 flex items-center justify-center text-indigo-400 font-bold">
-                                        {selectedEmpData?.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                        {/* Camera / Scanner */}
+                        <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+                            <div className="p-3 border-b border-slate-700 flex items-center gap-2">
+                                <div className={`h-2.5 w-2.5 rounded-full ${isScanning ? 'bg-green-500 animate-pulse' : modelsLoaded ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
+                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Face Recognition</span>
+                            </div>
+                            <div className="aspect-[4/3] bg-slate-900 relative overflow-hidden">
+                                <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+                                <canvas ref={canvasRef} className="hidden" />
+
+                                {/* Scan overlay */}
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <div className="w-48 h-48 border-2 border-indigo-500/50 rounded-full relative">
+                                        <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-8 h-1 bg-indigo-500 rounded-full"></div>
+                                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-1 bg-indigo-500 rounded-full"></div>
+                                        <div className="absolute top-1/2 -left-1 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-full"></div>
+                                        <div className="absolute top-1/2 -right-1 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-full"></div>
+                                        {isScanning && (
+                                            <div className="absolute inset-0 rounded-full border-2 border-indigo-400 animate-ping opacity-30"></div>
+                                        )}
                                     </div>
+                                </div>
+
+                                {/* Status bar */}
+                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 pt-8">
+                                    <div className="flex items-center gap-2 justify-center">
+                                        {isScanning && (
+                                            <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-indigo-400"></div>
+                                        )}
+                                        <p className="text-sm font-medium text-center">{scanStatus}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Min Score Info */}
+                        <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-3 flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-full bg-indigo-600/20 flex items-center justify-center flex-shrink-0">
+                                <svg className="h-4 w-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <p className="text-xs text-slate-400">Minimum skor pencocokan: <strong className="text-indigo-400">{MIN_MATCH_SCORE}%</strong></p>
+                                <p className="text-[10px] text-slate-500">Arahkan wajah ke kamera untuk identifikasi otomatis</p>
+                            </div>
+                        </div>
+
+                        {/* GPS Status */}
+                        <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-medium ${location ? 'bg-green-600/10 text-green-400 border border-green-600/20' : 'bg-red-600/10 text-red-400 border border-red-600/20'
+                            }`}>
+                            <div className={`h-2 w-2 rounded-full ${location ? 'bg-green-400' : 'bg-red-400'} animate-pulse`}></div>
+                            {location ? `GPS Aktif (${location.lat.toFixed(4)}, ${location.lng.toFixed(4)})` : (locationError || 'Mencari GPS...')}
+                        </div>
+                    </>
+                ) : (
+                    /* ===== MATCHED MODE ===== */
+                    <>
+                        {/* Matched Employee Card */}
+                        <div className="bg-gradient-to-r from-indigo-600/20 to-indigo-700/10 border border-indigo-500/30 rounded-xl p-4">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-3">
+                                    {capturedPhoto ? (
+                                        <img src={capturedPhoto} alt="Face" className="h-14 w-14 rounded-full object-cover border-2 border-indigo-500" />
+                                    ) : (
+                                        <div className="h-14 w-14 rounded-full bg-indigo-600/30 flex items-center justify-center text-indigo-400 font-bold text-lg">
+                                            {matchedEmployee.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                                        </div>
+                                    )}
                                     <div>
-                                        <p className="font-bold">{selectedEmpData?.name}</p>
-                                        <p className="text-xs text-slate-400">{selectedEmpData?.position}</p>
+                                        <p className="font-bold text-lg">{matchedEmployee.name}</p>
+                                        <p className="text-xs text-slate-400">{matchedEmployee.position} • {matchedEmployee.employeeId}</p>
                                     </div>
                                 </div>
                                 <button
-                                    onClick={() => { setSelectedEmployee(''); setTodayStatus(null); setCapturedPhoto(null); stopCamera() }}
-                                    className="text-xs text-indigo-400 font-bold px-3 py-1.5 bg-indigo-600/10 rounded-lg"
+                                    onClick={resetScan}
+                                    className="text-xs text-indigo-400 font-bold px-3 py-1.5 bg-indigo-600/20 rounded-lg border border-indigo-500/20"
                                 >
-                                    Ganti
+                                    Scan Ulang
                                 </button>
+                            </div>
+                            {/* Match Score Bar */}
+                            <div className="flex items-center gap-3">
+                                <span className="text-[10px] text-slate-400 uppercase tracking-wider w-20">Match Score</span>
+                                <div className="flex-1 bg-slate-900 h-2 rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-gradient-to-r from-indigo-500 to-green-500 rounded-full transition-all"
+                                        style={{ width: `${matchScore}%` }}
+                                    ></div>
+                                </div>
+                                <span className="font-bold text-sm text-green-400">{matchScore}%</span>
                             </div>
                         </div>
 
@@ -315,60 +463,13 @@ export default function MobileClockPage() {
                             <div className={`h-2 w-2 rounded-full ${location ? 'bg-green-400' : 'bg-red-400'} animate-pulse`}></div>
                             {location ? `GPS Aktif (${location.lat.toFixed(4)}, ${location.lng.toFixed(4)})` : (locationError || 'Mencari GPS...')}
                         </div>
-
-                        {/* Camera */}
-                        <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
-                            <div className="p-3 border-b border-slate-700 flex items-center justify-between">
-                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Foto (Opsional)</h3>
-                                {!isCameraActive && !capturedPhoto && (
-                                    <button onClick={startCamera} className="text-xs text-indigo-400 font-bold px-3 py-1 bg-indigo-600/10 rounded-lg">
-                                        Buka Kamera
-                                    </button>
-                                )}
-                            </div>
-                            <div className="aspect-square bg-slate-900 relative">
-                                {isCameraActive ? (
-                                    <>
-                                        <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
-                                        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-3">
-                                            <button onClick={capturePhoto} className="bg-white h-16 w-16 rounded-full border-4 border-slate-300 active:scale-95 transition-transform"></button>
-                                            <button onClick={stopCamera} className="bg-red-500 h-12 w-12 rounded-full flex items-center justify-center self-center">
-                                                <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </>
-                                ) : capturedPhoto ? (
-                                    <>
-                                        <img src={capturedPhoto} alt="Captured" className="w-full h-full object-cover" />
-                                        <button
-                                            onClick={() => { setCapturedPhoto(null); startCamera() }}
-                                            className="absolute bottom-4 right-4 bg-slate-800 text-white text-xs font-bold px-3 py-2 rounded-lg border border-slate-600"
-                                        >
-                                            Ulangi
-                                        </button>
-                                    </>
-                                ) : (
-                                    <div className="flex items-center justify-center h-full text-slate-600">
-                                        <div className="text-center">
-                                            <svg className="h-12 w-12 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            </svg>
-                                            <p className="text-xs">Tap "Buka Kamera" untuk foto</p>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
                     </>
                 )}
             </div>
 
             {/* Bottom Action Buttons */}
-            {selectedEmployee && (
-                <div className="p-4 bg-[#1e293b] border-t border-slate-700 safe-area-bottom">
+            {matchedEmployee && (
+                <div className="p-4 bg-[#1e293b] border-t border-slate-700">
                     <div className="grid grid-cols-2 gap-3">
                         <button
                             onClick={handleClockIn}
