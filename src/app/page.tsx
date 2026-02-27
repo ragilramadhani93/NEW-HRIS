@@ -105,12 +105,12 @@ export default function HRISApp() {
         <Tabs defaultValue="clock" orientation="vertical" className="flex flex-1 w-full flex-col md:flex-row">
 
           {/* Sidebar Navigation */}
-          <aside className="w-full md:w-64 flex-shrink-0 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 z-10 flex flex-col hidden md:flex">
-            <nav className="p-4 space-y-1 flex-1">
-              <div className="px-4 py-3">
+          <aside className="w-full md:w-64 flex-shrink-0 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 z-10 flex-col hidden md:flex">
+            <nav className="flex-1 overflow-y-auto no-scrollbar">
+              <div className="px-8 pt-6 pb-2">
                 <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Management</p>
               </div>
-              <TabsList className="flex flex-col bg-transparent items-stretch gap-0.5 outline-none border-none">
+              <TabsList className="flex flex-col h-auto w-full bg-transparent items-stretch gap-0.5 px-4 outline-none border-none rounded-none">
                 <TabsTrigger value="clock" className="flex justify-start items-center gap-3 px-4 py-2.5 h-auto rounded-lg text-slate-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700/50 data-[state=active]:bg-indigo-600/10 data-[state=active]:text-indigo-600 dark:data-[state=active]:bg-indigo-500/10 dark:data-[state=active]:text-indigo-400 font-semibold transition-colors shadow-none border-none outline-none">
                   <Fingerprint className="h-5 w-5 flex-shrink-0" />
                   <span className="whitespace-nowrap">Face Registry</span>
@@ -129,10 +129,10 @@ export default function HRISApp() {
                 </TabsTrigger>
               </TabsList>
 
-              <div className="px-4 py-3 mt-4">
+              <div className="px-8 pt-6 pb-2">
                 <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Operations</p>
               </div>
-              <TabsList className="flex flex-col bg-transparent items-stretch gap-0.5 outline-none border-none">
+              <TabsList className="flex flex-col h-auto w-full bg-transparent items-stretch gap-0.5 px-4 outline-none border-none rounded-none">
                 <TabsTrigger value="reports" className="flex justify-start items-center gap-3 px-4 py-2.5 h-auto rounded-lg text-slate-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700/50 data-[state=active]:bg-indigo-600/10 data-[state=active]:text-indigo-600 dark:data-[state=active]:bg-indigo-500/10 dark:data-[state=active]:text-indigo-400 font-semibold transition-colors shadow-none border-none outline-none">
                   <Calendar className="h-5 w-5 flex-shrink-0" />
                   <span className="whitespace-nowrap">Reports</span>
@@ -144,7 +144,7 @@ export default function HRISApp() {
               </TabsList>
             </nav>
             <div className="p-4 border-t border-slate-200 dark:border-slate-700">
-              <TabsList className="flex flex-col bg-transparent items-stretch outline-none border-none">
+              <TabsList className="flex flex-col h-auto w-full bg-transparent items-stretch outline-none border-none rounded-none">
                 <TabsTrigger value="settings" className="w-full flex justify-start items-center gap-3 px-4 py-2.5 h-auto rounded-lg text-slate-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700/50 data-[state=active]:bg-indigo-600/10 data-[state=active]:text-indigo-600 dark:data-[state=active]:bg-indigo-500/10 dark:data-[state=active]:text-indigo-400 font-medium transition-colors shadow-none border-none outline-none">
                   <Settings className="h-5 w-5 flex-shrink-0" />
                   <span className="whitespace-nowrap">Settings</span>
