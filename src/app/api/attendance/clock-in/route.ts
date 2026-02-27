@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
 function getTodayDate(): string {
-  return new Date().toISOString().split('T')[0]
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' })
 }
 
 function getCurrentTime(): string {
-  return new Date().toTimeString().split(' ')[0]
+  return new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Jakarta', hour12: false })
 }
 
 // Haversine formula - calculate distance between two GPS points in meters

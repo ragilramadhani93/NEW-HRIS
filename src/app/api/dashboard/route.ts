@@ -2,13 +2,13 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
 function getTodayDate(): string {
-  return new Date().toISOString().split('T')[0]
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' })
 }
 
 function getDateDaysAgo(days: number): string {
   const date = new Date()
   date.setDate(date.getDate() - days)
-  return date.toISOString().split('T')[0]
+  return date.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' })
 }
 
 // GET - Dashboard statistics
