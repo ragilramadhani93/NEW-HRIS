@@ -23,6 +23,7 @@ async function run() {
         // Step 1: Drop ALL existing tables (including new ones)
         console.log('Dropping existing tables...');
         const dropSQL = `
+            DROP TABLE IF EXISTS "LeaveRequest";
             DROP TABLE IF EXISTS "PayrollIncentive";
             DROP TABLE IF EXISTS "Attendance";
             DROP TABLE IF EXISTS "Employee";

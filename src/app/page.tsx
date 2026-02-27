@@ -19,7 +19,7 @@ import {
   Camera, CheckCircle, XCircle, AlertCircle, Search, Plus,
   Trash2, Edit, Download, Calendar, TrendingUp, BarChart3,
   Fingerprint, Video, VideoOff, RefreshCw, MapPin, Navigation, Banknote,
-  Lock, Eye, EyeOff
+  Lock, Eye, EyeOff, FileText, Upload, Image
 } from 'lucide-react'
 import {
   ChartContainer,
@@ -147,6 +147,10 @@ export default function HRISApp() {
                   <Banknote className="h-5 w-5 flex-shrink-0" />
                   <span className="whitespace-nowrap">Payroll</span>
                 </TabsTrigger>
+                <TabsTrigger value="leave" className="flex justify-start items-center gap-3 px-4 py-2.5 h-auto rounded-lg text-slate-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700/50 data-[state=active]:bg-indigo-600/10 data-[state=active]:text-indigo-600 dark:data-[state=active]:bg-indigo-500/10 dark:data-[state=active]:text-indigo-400 font-semibold transition-colors shadow-none border-none outline-none">
+                  <FileText className="h-5 w-5 flex-shrink-0" />
+                  <span className="whitespace-nowrap">Leave Requests</span>
+                </TabsTrigger>
               </TabsList>
             </nav>
             <div className="p-4 border-t border-slate-200 dark:border-slate-700">
@@ -179,6 +183,9 @@ export default function HRISApp() {
               </TabsContent>
               <TabsContent value="payroll" className="m-0 focus-visible:outline-none">
                 <PayrollTab />
+              </TabsContent>
+              <TabsContent value="leave" className="m-0 focus-visible:outline-none">
+                <LeaveRequestsTab />
               </TabsContent>
               <TabsContent value="settings" className="m-0 focus-visible:outline-none">
                 <SettingsTab />
@@ -2792,6 +2799,379 @@ function SettingsTab() {
           </div>
         </CardContent>
       </Card>
+    </div>
+  )
+}
+
+// Leave Requests Tab
+function LeaveRequestsTab() {
+  const { employees } = useHRISStore()
+  const [leaveRequests, setLeaveRequests] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [evidencePreview, setEvidencePreview] = useState<string | null>(null)
+
+  // Form state
+  const [formData, setFormData] = useState({
+    employeeId: '',
+    type: 'IZIN' as 'IZIN' | 'SAKIT',
+    startDate: '',
+    endDate: '',
+    reason: '',
+    evidence: '' as string,
+    evidenceName: ''
+  })
+
+  useEffect(() => {
+    fetchLeaveRequests()
+  }, [])
+
+  const fetchLeaveRequests = async () => {
+    try {
+      const response = await fetch('/api/leave-requests')
+      if (response.ok) {
+        const data = await response.json()
+        setLeaveRequests(data)
+      }
+    } catch (error) {
+      console.error('Error fetching leave requests:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size must be less than 5MB')
+      return
+    }
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setFormData(prev => ({
+        ...prev,
+        evidence: reader.result as string,
+        evidenceName: file.name
+      }))
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    try {
+      const response = await fetch('/api/leave-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      })
+      if (response.ok) {
+        toast.success('Leave request submitted')
+        setIsDialogOpen(false)
+        setFormData({ employeeId: '', type: 'IZIN', startDate: '', endDate: '', reason: '', evidence: '', evidenceName: '' })
+        fetchLeaveRequests()
+      } else {
+        const data = await response.json()
+        toast.error(data.error || 'Failed to submit')
+      }
+    } catch (error) {
+      toast.error('Failed to submit leave request')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleStatusUpdate = async (id: string, status: 'APPROVED' | 'REJECTED') => {
+    try {
+      const response = await fetch(`/api/leave-requests/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      })
+      if (response.ok) {
+        toast.success(`Request ${status.toLowerCase()}`)
+        fetchLeaveRequests()
+      }
+    } catch (error) {
+      toast.error('Failed to update status')
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    try {
+      const response = await fetch(`/api/leave-requests/${id}`, { method: 'DELETE' })
+      if (response.ok) {
+        toast.success('Request deleted')
+        fetchLeaveRequests()
+      }
+    } catch (error) {
+      toast.error('Failed to delete request')
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-xl font-bold">Leave Requests</h2>
+          <p className="text-sm text-slate-400 mt-1">Manage izin and sakit requests</p>
+        </div>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white border-0">
+              <Plus className="h-4 w-4 mr-2" />
+              New Request
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Submit Leave Request</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Employee</Label>
+                <Select value={formData.employeeId} onValueChange={(v) => setFormData(prev => ({ ...prev, employeeId: v }))}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Select employee" /></SelectTrigger>
+                  <SelectContent>
+                    {employees.filter(e => e.isActive).map(emp => (
+                      <SelectItem key={emp.id} value={emp.id}>{emp.name} - {emp.position}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Type</Label>
+                <Select value={formData.type} onValueChange={(v) => setFormData(prev => ({ ...prev, type: v as 'IZIN' | 'SAKIT' }))}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="IZIN">Izin (Leave)</SelectItem>
+                    <SelectItem value="SAKIT">Sakit (Sick)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Start Date</Label>
+                  <Input type="date" value={formData.startDate} onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))} className="mt-1" required />
+                </div>
+                <div>
+                  <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">End Date</Label>
+                  <Input type="date" value={formData.endDate} onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))} className="mt-1" required />
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Reason</Label>
+                <textarea
+                  value={formData.reason}
+                  onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
+                  className="mt-1 w-full px-3 py-2 bg-gray-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 min-h-[80px] resize-none"
+                  placeholder="Describe your reason..."
+                  required
+                />
+              </div>
+
+              <div>
+                <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Evidence (Optional)</Label>
+                <div className="mt-1">
+                  <label className="flex items-center justify-center gap-2 w-full px-4 py-3 border-2 border-dashed border-slate-200 dark:border-slate-600 rounded-lg cursor-pointer hover:border-indigo-600/50 transition-colors">
+                    <Upload className="h-4 w-4 text-slate-400" />
+                    <span className="text-sm text-slate-400">
+                      {formData.evidenceName || 'Upload image or document (max 5MB)'}
+                    </span>
+                    <input type="file" className="hidden" accept="image/*,.pdf" onChange={handleFileUpload} />
+                  </label>
+                  {formData.evidence && formData.evidence.startsWith('data:image') && (
+                    <div className="mt-2 relative">
+                      <img src={formData.evidence} alt="Preview" className="w-full h-32 object-cover rounded-lg border" />
+                      <button type="button" onClick={() => setFormData(prev => ({ ...prev, evidence: '', evidenceName: '' }))} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1">
+                        <XCircle className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button type="button" variant="secondary" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                <Button type="submit" disabled={isSubmitting || !formData.employeeId || !formData.startDate || !formData.endDate || !formData.reason} className="bg-indigo-600 hover:bg-indigo-700 text-white border-0">
+                  {isSubmitting ? 'Submitting...' : 'Submit Request'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Pending</span>
+          <div className="flex items-end gap-2 mt-2">
+            <span className="text-3xl font-bold text-orange-500">{leaveRequests.filter(r => r.status === 'PENDING').length}</span>
+            <span className="text-slate-400 text-sm mb-1">requests</span>
+          </div>
+          <div className="w-full bg-gray-100 dark:bg-slate-700 h-1.5 rounded-full mt-3 overflow-hidden">
+            <div className="bg-orange-500 h-full rounded-full" style={{ width: `${leaveRequests.length > 0 ? (leaveRequests.filter(r => r.status === 'PENDING').length / leaveRequests.length) * 100 : 0}%` }}></div>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Approved</span>
+          <div className="flex items-end gap-2 mt-2">
+            <span className="text-3xl font-bold text-green-500">{leaveRequests.filter(r => r.status === 'APPROVED').length}</span>
+            <span className="text-slate-400 text-sm mb-1">requests</span>
+          </div>
+          <div className="w-full bg-gray-100 dark:bg-slate-700 h-1.5 rounded-full mt-3 overflow-hidden">
+            <div className="bg-green-500 h-full rounded-full" style={{ width: `${leaveRequests.length > 0 ? (leaveRequests.filter(r => r.status === 'APPROVED').length / leaveRequests.length) * 100 : 0}%` }}></div>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Rejected</span>
+          <div className="flex items-end gap-2 mt-2">
+            <span className="text-3xl font-bold text-red-500">{leaveRequests.filter(r => r.status === 'REJECTED').length}</span>
+            <span className="text-slate-400 text-sm mb-1">requests</span>
+          </div>
+          <div className="w-full bg-gray-100 dark:bg-slate-700 h-1.5 rounded-full mt-3 overflow-hidden">
+            <div className="bg-red-500 h-full rounded-full" style={{ width: `${leaveRequests.length > 0 ? (leaveRequests.filter(r => r.status === 'REJECTED').length / leaveRequests.length) * 100 : 0}%` }}></div>
+          </div>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="border-slate-200 dark:border-slate-700">
+              <TableHead className="text-xs font-bold uppercase tracking-wider text-slate-400">Employee</TableHead>
+              <TableHead className="text-xs font-bold uppercase tracking-wider text-slate-400">Type</TableHead>
+              <TableHead className="text-xs font-bold uppercase tracking-wider text-slate-400">Date Range</TableHead>
+              <TableHead className="text-xs font-bold uppercase tracking-wider text-slate-400">Reason</TableHead>
+              <TableHead className="text-xs font-bold uppercase tracking-wider text-slate-400">Evidence</TableHead>
+              <TableHead className="text-xs font-bold uppercase tracking-wider text-slate-400">Status</TableHead>
+              <TableHead className="text-xs font-bold uppercase tracking-wider text-slate-400">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {leaveRequests.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-12 text-slate-400">
+                  <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="font-medium">No leave requests yet</p>
+                  <p className="text-xs mt-1">Click "New Request" to submit one</p>
+                </TableCell>
+              </TableRow>
+            ) : (
+              leaveRequests.map((req) => (
+                <TableRow key={req.id} className="border-slate-200 dark:border-slate-700">
+                  <TableCell>
+                    <div>
+                      <p className="font-semibold text-sm">{req.employee?.name}</p>
+                      <p className="text-xs text-slate-400">{req.employee?.position}</p>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${req.type === 'SAKIT' ? 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400' : 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
+                      }`}>
+                      {req.type}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {req.startDate} — {req.endDate}
+                  </TableCell>
+                  <TableCell className="text-sm max-w-[200px] truncate">{req.reason}</TableCell>
+                  <TableCell>
+                    {req.evidence ? (
+                      <button
+                        onClick={() => setEvidencePreview(req.evidence)}
+                        className="text-indigo-600 hover:text-indigo-700 text-xs font-bold flex items-center gap-1"
+                      >
+                        <Image className="h-3 w-3" />
+                        View
+                      </button>
+                    ) : (
+                      <span className="text-xs text-slate-400">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${req.status === 'PENDING' ? 'bg-orange-50 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400' :
+                        req.status === 'APPROVED' ? 'bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400' :
+                          'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'
+                      }`}>
+                      {req.status}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      {req.status === 'PENDING' && (
+                        <>
+                          <Button size="sm" variant="ghost" className="h-7 px-2 text-green-600 hover:bg-green-50" onClick={() => handleStatusUpdate(req.id, 'APPROVED')}>
+                            <CheckCircle className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-7 px-2 text-red-600 hover:bg-red-50" onClick={() => handleStatusUpdate(req.id, 'REJECTED')}>
+                            <XCircle className="h-3.5 w-3.5" />
+                          </Button>
+                        </>
+                      )}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button size="sm" variant="ghost" className="h-7 px-2 text-slate-400 hover:text-red-500">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Request?</AlertDialogTitle>
+                            <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(req.id)} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Evidence Preview Dialog */}
+      <Dialog open={!!evidencePreview} onOpenChange={() => setEvidencePreview(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Evidence</DialogTitle>
+          </DialogHeader>
+          {evidencePreview && (
+            <div className="w-full">
+              {evidencePreview.startsWith('data:image') ? (
+                <img src={evidencePreview} alt="Evidence" className="w-full rounded-lg" />
+              ) : (
+                <div className="text-center py-8">
+                  <FileText className="h-12 w-12 mx-auto mb-2 text-slate-400" />
+                  <a href={evidencePreview} download className="text-indigo-600 font-bold text-sm hover:underline">Download File</a>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
