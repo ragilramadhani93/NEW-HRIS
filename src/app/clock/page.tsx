@@ -446,40 +446,75 @@ export default function MobileClockPage() {
                 </div>
             </div>
 
-            {/* Clock In / Clock Out buttons */}
-            <div className="bg-[#0f172a] px-3 py-3 flex gap-2">
-                <button
-                    onClick={handleClockIn}
-                    disabled={isClocking || !matchedEmployee || !location || (todayStatus?.clockIn !== null && todayStatus?.clockIn !== undefined)}
-                    className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm transition-all active:scale-[0.98] disabled:opacity-30 bg-indigo-600 hover:bg-indigo-700 text-white"
-                >
-                    {isClocking ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    ) : (
-                        <>
-                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                            </svg>
-                            Clock In
-                        </>
-                    )}
-                </button>
-                <button
-                    onClick={handleClockOut}
-                    disabled={isClocking || !matchedEmployee || !location || !todayStatus?.clockIn || (todayStatus?.clockOut !== null && todayStatus?.clockOut !== undefined)}
-                    className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm transition-all active:scale-[0.98] disabled:opacity-30 bg-slate-800 border border-slate-600 text-slate-300 hover:bg-slate-700"
-                >
-                    {isClocking ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    ) : (
-                        <>
-                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                            </svg>
-                            Clock Out
-                        </>
-                    )}
-                </button>
+            {/* Bottom section: Status + Buttons */}
+            <div className="bg-[#0f172a] px-3 pt-2 pb-3 space-y-2">
+                {/* Today's status */}
+                {matchedEmployee && todayStatus && (todayStatus.clockIn || todayStatus.clockOut) && (
+                    <div className="flex items-center justify-center gap-4 py-1.5 bg-slate-800/60 rounded-lg text-[11px]">
+                        <span className="text-slate-400">
+                            Clock In: <strong className="text-green-400">{todayStatus.clockIn || '--:--'}</strong>
+                        </span>
+                        <span className="text-slate-600">|</span>
+                        <span className="text-slate-400">
+                            Clock Out: <strong className="text-orange-400">{todayStatus.clockOut || '--:--'}</strong>
+                        </span>
+                    </div>
+                )}
+
+                {/* Buttons */}
+                <div className="flex gap-2">
+                    {(() => {
+                        const alreadyClockedIn = todayStatus?.clockIn !== null && todayStatus?.clockIn !== undefined
+                        const alreadyClockedOut = todayStatus?.clockOut !== null && todayStatus?.clockOut !== undefined
+                        const clockInDisabled = isClocking || !matchedEmployee || !location || alreadyClockedIn
+                        const clockOutDisabled = isClocking || !matchedEmployee || !location || !todayStatus?.clockIn || alreadyClockedOut
+
+                        return (
+                            <>
+                                <button
+                                    onClick={handleClockIn}
+                                    disabled={clockInDisabled}
+                                    className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm transition-all active:scale-[0.98]
+                                        ${clockInDisabled
+                                            ? 'bg-slate-800 border border-slate-700 text-slate-500 opacity-50'
+                                            : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/20'
+                                        }`}
+                                >
+                                    {isClocking ? (
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                    ) : (
+                                        <>
+                                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                                            </svg>
+                                            {alreadyClockedIn ? '✓ Sudah Clock In' : 'Clock In'}
+                                        </>
+                                    )}
+                                </button>
+                                <button
+                                    onClick={handleClockOut}
+                                    disabled={clockOutDisabled}
+                                    className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm transition-all active:scale-[0.98]
+                                        ${clockOutDisabled
+                                            ? 'bg-slate-800 border border-slate-700 text-slate-500 opacity-50'
+                                            : 'bg-orange-600 hover:bg-orange-700 text-white shadow-lg shadow-orange-600/20'
+                                        }`}
+                                >
+                                    {isClocking ? (
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                    ) : (
+                                        <>
+                                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                            </svg>
+                                            {alreadyClockedOut ? '✓ Sudah Clock Out' : 'Clock Out'}
+                                        </>
+                                    )}
+                                </button>
+                            </>
+                        )
+                    })()}
+                </div>
             </div>
         </div>
     )
