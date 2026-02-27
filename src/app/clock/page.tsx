@@ -38,7 +38,9 @@ function euclideanDistance(a: number[], b: number[]): number {
 
 export default function MobileClockPage() {
     const [employees, setEmployees] = useState<Employee[]>([])
+    const employeesRef = useRef<Employee[]>([])
     const [matchedEmployee, setMatchedEmployee] = useState<Employee | null>(null)
+    const matchedEmployeeRef = useRef<Employee | null>(null)
     const [matchScore, setMatchScore] = useState<number>(0)
     const [todayStatus, setTodayStatus] = useState<TodayAttendance | null>(null)
     const [isLoading, setIsLoading] = useState(true)
@@ -67,7 +69,10 @@ export default function MobileClockPage() {
         fetch('/api/employees')
             .then(res => res.json())
             .then(data => {
-                setEmployees(Array.isArray(data) ? data.filter((e: Employee & { isActive: boolean }) => e.isActive) : [])
+                const active = Array.isArray(data) ? data.filter((e: Employee & { isActive: boolean }) => e.isActive) : []
+                setEmployees(active)
+                employeesRef.current = active
+                console.log('Employees loaded:', active.length, 'with face:', active.filter(e => e.faceDescriptor).length)
                 setIsLoading(false)
             })
             .catch(() => setIsLoading(false))
@@ -171,7 +176,7 @@ export default function MobileClockPage() {
     const startScanning = () => {
         stopScanning()
         scanIntervalRef.current = setInterval(async () => {
-            if (!videoRef.current || !window.faceapi || matchedEmployee) return
+            if (!videoRef.current || !window.faceapi || matchedEmployeeRef.current) return
 
             try {
                 const detection = await window.faceapi
@@ -186,8 +191,9 @@ export default function MobileClockPage() {
 
                     // Match against all employees with face descriptors
                     let bestMatch: { employee: Employee; score: number } | null = null
-                    const empsWithFace = employees.filter(e => e.faceDescriptor)
-                    console.log(`Employees total: ${employees.length}, with face: ${empsWithFace.length}`)
+                    const currentEmployees = employeesRef.current
+                    const empsWithFace = currentEmployees.filter(e => e.faceDescriptor)
+                    console.log(`Employees total: ${currentEmployees.length}, with face: ${empsWithFace.length}`)
 
                     for (const emp of empsWithFace) {
                         try {
@@ -247,6 +253,7 @@ export default function MobileClockPage() {
                             setCapturedPhoto(canvas.toDataURL('image/jpeg', 0.7))
                         }
 
+                        matchedEmployeeRef.current = bestMatch.employee
                         setMatchedEmployee(bestMatch.employee)
                         setMatchScore(bestMatch.score)
                         setScanStatus(`Dikenali: ${bestMatch.employee.name}`)
@@ -267,6 +274,7 @@ export default function MobileClockPage() {
 
     // Reset / scan again
     const resetScan = () => {
+        matchedEmployeeRef.current = null
         setMatchedEmployee(null)
         setMatchScore(0)
         setTodayStatus(null)
