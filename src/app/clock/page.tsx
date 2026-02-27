@@ -27,6 +27,15 @@ interface TodayAttendance {
 
 const MIN_MATCH_SCORE = 80
 
+// Manual Euclidean distance (face-api.js doesn't expose this as standalone)
+function euclideanDistance(a: number[], b: number[]): number {
+    let sum = 0
+    for (let i = 0; i < a.length; i++) {
+        sum += (a[i] - b[i]) ** 2
+    }
+    return Math.sqrt(sum)
+}
+
 export default function MobileClockPage() {
     const [employees, setEmployees] = useState<Employee[]>([])
     const [matchedEmployee, setMatchedEmployee] = useState<Employee | null>(null)
@@ -176,20 +185,22 @@ export default function MobileClockPage() {
 
                     // Match against all employees with face descriptors
                     let bestMatch: { employee: Employee; score: number } | null = null
+                    const empsWithFace = employees.filter(e => e.faceDescriptor)
+                    console.log(`Matching against ${empsWithFace.length} employees with face data`)
 
-                    for (const emp of employees) {
-                        if (!emp.faceDescriptor) continue
+                    for (const emp of empsWithFace) {
                         try {
-                            const storedDescriptor = JSON.parse(emp.faceDescriptor) as number[]
-                            const distance = window.faceapi.euclideanDistance(currentDescriptor, storedDescriptor)
+                            const storedDescriptor = JSON.parse(emp.faceDescriptor!) as number[]
+                            const distance = euclideanDistance(currentDescriptor, storedDescriptor)
                             // Convert distance to percentage (0 distance = 100%, 0.6 distance = 0%)
                             const score = Math.round(Math.max(0, (1 - distance / 0.6)) * 100)
+                            console.log(`${emp.name}: distance=${distance.toFixed(4)}, score=${score}%`)
 
                             if (score >= MIN_MATCH_SCORE && (!bestMatch || score > bestMatch.score)) {
                                 bestMatch = { employee: emp, score }
                             }
-                        } catch {
-                            // skip invalid descriptors
+                        } catch (parseErr) {
+                            console.error(`Error parsing face data for ${emp.name}:`, parseErr)
                         }
                     }
 
@@ -377,7 +388,7 @@ export default function MobileClockPage() {
                                 </svg>
                             </div>
                             <div>
-                                <p className="text-xs text-slate-400">Minimum skor pencocokan: <strong className="text-indigo-400">{MIN_MATCH_SCORE}%</strong></p>
+                                <p className="text-xs text-slate-400">Min skor: <strong className="text-indigo-400">{MIN_MATCH_SCORE}%</strong> • Wajah terdaftar: <strong className="text-indigo-400">{employees.filter(e => e.faceDescriptor).length}</strong>/{employees.length}</p>
                                 <p className="text-[10px] text-slate-500">Arahkan wajah ke kamera untuk identifikasi otomatis</p>
                             </div>
                         </div>
@@ -448,8 +459,8 @@ export default function MobileClockPage() {
                             {todayStatus?.status && (
                                 <div className="mt-3 text-center">
                                     <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${todayStatus.status === 'PRESENT' ? 'bg-green-600/20 text-green-400' :
-                                            todayStatus.status === 'LATE' ? 'bg-orange-600/20 text-orange-400' :
-                                                'bg-slate-600/20 text-slate-400'
+                                        todayStatus.status === 'LATE' ? 'bg-orange-600/20 text-orange-400' :
+                                            'bg-slate-600/20 text-slate-400'
                                         }`}>
                                         {todayStatus.status}
                                     </span>
