@@ -18,7 +18,8 @@ import {
   Clock, Users, UserCheck, UserX, Building2, Settings, LogOut,
   Camera, CheckCircle, XCircle, AlertCircle, Search, Plus,
   Trash2, Edit, Download, Calendar, TrendingUp, BarChart3,
-  Fingerprint, Video, VideoOff, RefreshCw, MapPin, Navigation, Banknote
+  Fingerprint, Video, VideoOff, RefreshCw, MapPin, Navigation, Banknote,
+  Lock, Eye, EyeOff
 } from 'lucide-react'
 import {
   ChartContainer,
@@ -38,6 +39,7 @@ export default function HRISApp() {
   const [mounted, setMounted] = useState(false)
   const [faceApiLoaded, setFaceApiLoaded] = useState(false)
   const [modelsLoaded, setModelsLoaded] = useState(false)
+  const { isAuthenticated } = useHRISStore()
 
   const loadModels = useCallback(async () => {
     try {
@@ -96,6 +98,10 @@ export default function HRISApp() {
         </div>
       </div>
     )
+  }
+
+  if (!isAuthenticated) {
+    return <LoginPage />
   }
 
   return (
@@ -188,7 +194,7 @@ export default function HRISApp() {
 
 // Header Component
 function Header() {
-  const { settings } = useHRISStore()
+  const { settings, logout, adminUsername } = useHRISStore()
   const [currentTime, setCurrentTime] = useState(new Date())
 
   useEffect(() => {
@@ -224,11 +230,129 @@ function Header() {
         </div>
         <div className="flex items-center gap-3 pl-6 border-l border-slate-200 dark:border-slate-700">
           <div className="h-8 w-8 rounded-full bg-indigo-600/20 flex items-center justify-center text-indigo-600 font-bold text-xs border border-indigo-600/10">
-            AD
+            {(adminUsername || 'AD').slice(0, 2).toUpperCase()}
           </div>
+          <button
+            onClick={logout}
+            className="p-2 text-slate-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
+            title="Logout"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
         </div>
       </div>
     </header>
+  )
+}
+
+// Login Page Component
+function LoginPage() {
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { login, settings } = useHRISStore()
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setIsSubmitting(true)
+
+    setTimeout(() => {
+      const success = login(username, password)
+      if (!success) {
+        setError('Invalid username or password')
+      }
+      setIsSubmitting(false)
+    }, 500)
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] dark:bg-[#0f172a] p-4">
+      <div className="w-full max-w-md">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center bg-indigo-600 p-3 rounded-xl mb-4">
+            <Building2 className="h-8 w-8 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight">{settings.companyName}</h1>
+          <p className="text-sm text-slate-400 mt-1">Enterprise HR Management System</p>
+        </div>
+
+        {/* Login Card */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-8">
+          <div className="mb-6">
+            <h2 className="text-lg font-bold">Sign in</h2>
+            <p className="text-sm text-slate-400 mt-1">Enter your credentials to access the dashboard</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Username</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-colors placeholder:text-slate-400"
+                  placeholder="Enter username"
+                  required
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Password</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-colors placeholder:text-slate-400 pr-10"
+                  placeholder="Enter password"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            {error && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-4 py-2.5 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isSubmitting || !username || !password}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold text-sm py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              {isSubmitting ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              ) : (
+                <>
+                  <Lock className="h-4 w-4" />
+                  Sign In
+                </>
+              )}
+            </button>
+          </form>
+        </div>
+
+        <p className="text-center text-xs text-slate-400 mt-6">
+          © {new Date().getFullYear()} {settings.companyName}. All rights reserved.
+        </p>
+      </div>
+    </div>
   )
 }
 

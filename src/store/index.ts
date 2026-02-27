@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 
 export interface Shift {
   id: string
@@ -84,6 +85,12 @@ export interface Settings {
 }
 
 interface HRISState {
+  // Auth
+  isAuthenticated: boolean
+  adminUsername: string | null
+  login: (username: string, password: string) => boolean
+  logout: () => void
+
   // Outlets
   outlets: Outlet[]
   setOutlets: (outlets: Outlet[]) => void
@@ -134,53 +141,77 @@ const defaultSettings: Settings = {
   lateThreshold: 15,
 }
 
-export const useHRISStore = create<HRISState>((set) => ({
-  // Outlets
-  outlets: [],
-  setOutlets: (outlets) => set({ outlets }),
-  addOutlet: (outlet) => set((state) => ({ outlets: [...state.outlets, outlet] })),
-  updateOutlet: (id, outlet) =>
-    set((state) => ({
-      outlets: state.outlets.map((o) => (o.id === id ? { ...o, ...outlet } : o)),
-    })),
-  removeOutlet: (id) => set((state) => ({ outlets: state.outlets.filter((o) => o.id !== id) })),
+export const useHRISStore = create<HRISState>()(
+  persist(
+    (set) => ({
+      // Auth
+      isAuthenticated: false,
+      adminUsername: null,
+      login: (username: string, password: string) => {
+        if (username === 'admin' && password === 'admin123') {
+          set({ isAuthenticated: true, adminUsername: username })
+          return true
+        }
+        return false
+      },
+      logout: () => set({ isAuthenticated: false, adminUsername: null }),
 
-  // Employees
-  employees: [],
-  setEmployees: (employees) => set({ employees }),
-  addEmployee: (employee) => set((state) => ({ employees: [...state.employees, employee] })),
-  updateEmployee: (id, employee) =>
-    set((state) => ({
-      employees: state.employees.map((e) => (e.id === id ? { ...e, ...employee } : e)),
-    })),
-  removeEmployee: (id) => set((state) => ({ employees: state.employees.filter((e) => e.id !== id) })),
+      // Outlets
+      outlets: [],
+      setOutlets: (outlets) => set({ outlets }),
+      addOutlet: (outlet) => set((state) => ({ outlets: [...state.outlets, outlet] })),
+      updateOutlet: (id, outlet) =>
+        set((state) => ({
+          outlets: state.outlets.map((o) => (o.id === id ? { ...o, ...outlet } : o)),
+        })),
+      removeOutlet: (id) => set((state) => ({ outlets: state.outlets.filter((o) => o.id !== id) })),
 
-  // Attendance
-  attendance: [],
-  setAttendance: (attendance) => set({ attendance }),
-  todayAttendance: null,
-  setTodayAttendance: (attendance) => set({ todayAttendance: attendance }),
+      // Employees
+      employees: [],
+      setEmployees: (employees) => set({ employees }),
+      addEmployee: (employee) => set((state) => ({ employees: [...state.employees, employee] })),
+      updateEmployee: (id, employee) =>
+        set((state) => ({
+          employees: state.employees.map((e) => (e.id === id ? { ...e, ...employee } : e)),
+        })),
+      removeEmployee: (id) => set((state) => ({ employees: state.employees.filter((e) => e.id !== id) })),
 
-  // Dashboard
-  dashboardStats: null,
-  setDashboardStats: (stats) => set({ dashboardStats: stats }),
+      // Attendance
+      attendance: [],
+      setAttendance: (attendance) => set({ attendance }),
+      todayAttendance: null,
+      setTodayAttendance: (attendance) => set({ todayAttendance: attendance }),
 
-  // Settings
-  settings: defaultSettings,
-  setSettings: (settings) => set({ settings }),
+      // Dashboard
+      dashboardStats: null,
+      setDashboardStats: (stats) => set({ dashboardStats: stats }),
 
-  // UI State
-  currentTab: 'clock',
-  setCurrentTab: (tab) => set({ currentTab: tab }),
-  isLoading: false,
-  setIsLoading: (loading) => set({ isLoading: loading }),
+      // Settings
+      settings: defaultSettings,
+      setSettings: (settings) => set({ settings }),
 
-  // Face Recognition
-  faceDetected: false,
-  setFaceDetected: (detected) => set({ faceDetected: detected }),
-  currentFaceDescriptor: null,
-  setCurrentFaceDescriptor: (descriptor) => set({ currentFaceDescriptor: descriptor }),
-  capturedPhoto: null,
-  setCapturedPhoto: (photo) => set({ capturedPhoto: photo }),
-}))
+      // UI State
+      currentTab: 'clock',
+      setCurrentTab: (tab) => set({ currentTab: tab }),
+      isLoading: false,
+      setIsLoading: (loading) => set({ isLoading: loading }),
+
+      // Face Recognition
+      faceDetected: false,
+      setFaceDetected: (detected) => set({ faceDetected: detected }),
+      currentFaceDescriptor: null,
+      setCurrentFaceDescriptor: (descriptor) => set({ currentFaceDescriptor: descriptor }),
+      capturedPhoto: null,
+      setCapturedPhoto: (photo) => set({ capturedPhoto: photo }),
+    }),
+    {
+      name: 'hris-auth',
+      partialize: (state) => ({
+        isAuthenticated: state.isAuthenticated,
+        adminUsername: state.adminUsername,
+        settings: state.settings,
+      }),
+    }
+  )
+)
 
